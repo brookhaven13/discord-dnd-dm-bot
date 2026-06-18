@@ -8,20 +8,16 @@ const client = new Client({
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const systemInstruction = "你是一位精通龍與地下城（DND 5e）規則的傳奇地下城主（DM）。你的回覆風格客觀、嚴謹且充滿奇幻冒險的沉浸感。請負責引導玩家們的冒險、描述環境、扮演 NPC，並在適當時機要求玩家進行骰點判定。請用繁體中文回應。你的職責與規則如下：\n\n1. 角色扮演：你負責描述世界、環境、NPC 的行動與反應，以及玩家行動後的後果。你絕對不能替玩家的角色做決定或說話。\n2. 擲骰機制：所有的判定由玩家自行擲骰。當玩家嘗試行動時，會告知你骰出的點數，調整值與難度等級（DC）由你判定並計算總值。若需要玩家進行特定的檢定（如：力量、感知），請明確告知。\n3. 戰鬥與流程：在戰鬥時，請協助記錄主動權、敵人的 HP 與 AC，並等待玩家們輪流做出動作後，再描述戰鬥結果。\n4. 遊戲狀態：每次對話結束時，請僅以一行文字精簡提示「當前任務」即可。絕對不要主動列出玩家的血量、位置、道具或詳細能力狀態。其他所有角色狀態與數值，一律等到玩家們主動詢問時再行透露。\n5. 地圖繪製：在探索或戰鬥場景中，請用純文字與符號（如 #, @, T, E 等）繪製簡易的 ASCII 地圖，並附上符號對照表。\n6. 記憶連連貫性：請保持對話的連貫性，並嚴格記住之前的事件與角色互動。\n7. 完全沉浸：請不要提供任何現實世界的資訊或建議，所有回覆應該完全沉浸在 D&D 的奇幻世界中。\n\n【準備工作】：請先提供三個不同的冒險背景選項給我們，包含故事風格與基調。等我們討論並選擇其中一個後，再開始描述開場情境。";
+const systemInstruction = "你是一位精通龍與地下城（DND 5e）規則的傳奇地下城主（DM）。你的回覆風格客觀、嚴謹且充滿奇幻冒險的沉浸感。請負責引導玩家們的冒險、描述環境、扮演 NPC，並在適當時機要求玩家進行骰點判定。請用繁體中文回應。你的職責與規則如下：\n\n1. 角色扮演：你負責描述世界、環境、NPC 的行動與反應，以及玩家行動後的後果。你絕對不能替玩家的角色做決定或說話。\n2. 擲骰機制：所有的判定由玩家自行擲骰。當玩家嘗試行動時，會告知你骰出的點數，調整值與難度等級（DC）由你判定並計算總值。若需要玩家進行特定的檢定（如：力量、感知），請明確告知。\n3. 戰鬥與流程：在戰鬥時，請協助記錄主動權、敵人的 HP 與 AC，並等待玩家們輪流做出動作後，再描述戰鬥結果。\n4. 遊戲狀態：每次對話結束時，請僅以一行文字精簡提示「當前任務」即可。絕對不要主動列出玩家的血量、位置、道具或詳細能力狀態。其他所有角色狀態與數值，一律等到玩家們主動詢問時再行透露。\n5. 地圖繪製：在探索或戰鬥場景中，請用純文字與符號（如 #, @, T, E 等）繪製簡易的 ASCII 地圖，並附上符號對照表。\n6. 記憶連連貫性：請保持對話的連貫性，並嚴格記住之前的事件與角色互動。\n7. 完全沉浸：請不要提供任何現實世界的資訊或建議，所有回覆應該完全沉浸在 D&D 的奇幻世界中。\n\n【魔法世界設定】：以下為本 campaign 的魔法世界規則與風格，回覆時請遵守這些設定以維持一致性。\n\nA. 魔法來源：世界中的魔法主要分為「奧術（Arcane）」與「神聖（Divine）」兩大流派；奧術源自對宇宙法則的理解，神聖來自眾神或自然精靈的祝福。\nB. 咒語與材料：施法通常需要語言、手勢與材料組件（除非玩家使用可以忽略組件的特殊能力或法術製品）。若法術描述需要消耗貴重材料，請在場景中明確說明。\nC. 法力資源：本世界採用傳統法術位（spell slots）系統而非可回復的 \"mana\" 條；恢復方式依 D&D 規則（長休/短休）為主。\nD. 魔法限制與副作用：高階或禁忌魔法可能留下持久副作用（如咒痕、精神疲憊或世界扭曲），在適當情節可作為劇情推進工具。非凡魔法行為可能吸引異界注意或觸發守護機制。\nE. 魔法物品與罕見性：強力魔法物品稀有且需特殊儀式啟動；玩家若需使用，請描述取得或啟動所需步驟。\nF. 風格與語氣：魔法描寫偏向神秘與莊嚴，避免過度科技化或現代術語。\n\n【準備工作】：請先提供三個不同的冒險背景選項給我們，包含故事風格與基調。等我們討論並選擇其中一個後，再開始描述開場情境。"
 
-const generationConfig = {
-    maxOutputTokens: 800,
-    temperature: 0.7
-};
-
-// 【優化點 1】：定義 5 個免費層通用的模型備援陣列
+// 【優化點 1】：定義 6 個免費層通用的模型備援陣列
 const MODELS_POOL = [
-    "models/gemini-1.5-pro",      // 1.5 高階版
-    "models/gemini-2.5-flash",
-    "models/gemini-1.5-flash",
-    "models/gemini-1.5-flash-8k", // 備用輕量版
-    "models/gemini-2.5-pro",      // 2.5 高階版（免費層額度較低，適合備援）
+    "gemini-2-flash",          // 2.0 速度快、性能穩，拿來當主力極好
+    "gemini-2-flash-lite",     // 2.0 輕量版，極度省 Token 且反應極快
+    "gemini-2.5-flash-lite",   // 2.5 輕量版
+    "gemini-3-flash",          // 最新 3.0 Flash 世代，推理能力大幅提升
+    "gemini-2.5-flash",         // 2.5 Flash 世代，性能不錯且相對穩定
+    "gemini-2.5-pro"           // 2.5 高階邏輯版（當作最後的死線備援）
 ];
 
 // 全局模型指標，記錄目前用到哪一個，不用每次都從第一個開始試
@@ -30,11 +26,31 @@ let currentModelIndex = 0;
 const channelHistories = new Map(); 
 const MAX_HISTORY = 14; 
 
-client.once('clientReady', () => {
+// 回覆守護：避免對同一則訊息在同一個 process 中回覆多次
+const repliedMessages = new Set();
+
+async function safeReply(message, content) {
+    try {
+        if (repliedMessages.has(message.id)) {
+            console.log(`[safeReply] already replied - pid=${process.pid} messageId=${message.id}`);
+            return;
+        }
+        console.log(`[safeReply] sending reply - pid=${process.pid} messageId=${message.id}`);
+        await message.reply(content);
+        repliedMessages.add(message.id);
+        // 在一段時間後自動清理，以免集合無限增長（例如 10 分鐘）
+        setTimeout(() => repliedMessages.delete(message.id), 10 * 60 * 1000);
+    } catch (err) {
+        console.error('safeReply error:', err);
+    }
+}
+
+client.once('ready', () => {
     console.log(`🏰 城主機器人 ${client.user.tag} 已上線！模型輪詢故障轉移機制已啟動。`);
 });
 
 client.on('messageCreate', async (message) => {
+    // 排除機器人自己，且必須有 @ 機器人
     if (message.author.bot || !message.mentions.has(client.user)) return;
 
     const channelId = message.channel.id;
@@ -45,7 +61,6 @@ client.on('messageCreate', async (message) => {
     }
 
     let history = channelHistories.get(channelId);
-    history.push({ role: 'user', parts: [{ text: userMessage }] });
 
     try {
         await message.channel.sendTyping();
@@ -53,56 +68,61 @@ client.on('messageCreate', async (message) => {
         let responseText = null;
         let attempts = 0;
 
-        // 【優化點 2】：核心 Failover 輪詢機制
+        // 【關鍵修正】：拷貝一份當前的歷史紀錄，用來丟給 API 測試
+        // 並且把這一次的新訊息暫時塞進去這個臨時陣列裡
+        const tempContents = [...history, { role: 'user', parts: [{ text: userMessage }] }];
+
         while (attempts < MODELS_POOL.length) {
             const modelName = MODELS_POOL[currentModelIndex];
             try {
                 console.log(`[嘗試呼叫] 模型: ${modelName} (嘗試次數: ${attempts + 1})`);
                 
-                // 動態取得當前要使用的模型實例
                 const currentModel = genAI.getGenerativeModel({ 
                     model: modelName,
                     systemInstruction: systemInstruction,
-                    generationConfig: generationConfig
                 });
 
-                const result = await currentModel.generateContent({ contents: history });
+                // 餵給 API 的是包含新訊息的臨時陣列
+                const result = await currentModel.generateContent({ contents: tempContents });
                 responseText = result.response.text();
                 
-                // 如果成功拿到回應，就中斷迴圈
                 break; 
             } catch (error) {
-                // 如果捕獲到 429 或是 503 等錯誤，自動換下一個模型
-                if (error.status === 429 || error.status === 503 || error.message?.includes('429') || error.message?.includes('503')) {
-                    console.warn(`⚠️ 模型 ${modelName} 遇到限制或塞車 (${error.status})。正在切換至下一個備援模型...`);
+                // 如果是 429、503 或 404（以防萬一模型名不對），自動換下一個
+                if (error.status === 429 || error.status === 503 || error.status === 404 || 
+                    error.message?.includes('429') || error.message?.includes('503') || error.message?.includes('404')) {
+                    console.warn(`⚠️ 模型 ${modelName} 無法使用 (狀態碼: ${error.status})。切換至下一個備援...`);
                     currentModelIndex = (currentModelIndex + 1) % MODELS_POOL.length;
                     attempts++;
                 } else {
-                    // 如果是其他程式碼或語法錯誤，直接拋出不輪詢
                     throw error; 
                 }
             }
         }
 
-        // 如果五個模型全部都試過一輪都掛了
         if (!responseText) {
-            await message.reply("⚠️ 所有的城主分身此時都累了... (全部模型皆觸發限制，請稍候再試)");
+            await safeReply(message, "⚠️ 所有的城主分身此時都累了... (全部模型皆觸發限制，請稍候再試)");
             return;
         }
 
-        // 成功取得回應後的正常處理
-        await message.reply(responseText);
+        // 【關鍵修正】：只有完全成功拿到回應後，才正式把對話寫入真正的記憶 Map
+        history.push({ role: 'user', parts: [{ text: userMessage }] });
         history.push({ role: 'model', parts: [{ text: responseText }] });
 
+        // 限縮記憶長度
         if (history.length > MAX_HISTORY) {
             history.splice(0, 2); 
         }
         
         channelHistories.set(channelId, history);
 
+        // 最後只發送一次回覆（改用 safeReply 以避免重複）
+        console.log(`[reply] pid=${process.pid} channel=${channelId} messageIdToReply=${message.id}`);
+        await safeReply(message, responseText);
+
     } catch (error) {
         console.error("關鍵錯誤:", error);
-        await message.reply("⚠️ 城主規則書掉到地上了，請重新輸入動作。");
+        await safeReply(message, "⚠️ 城主規則書掉到地上了，請重新輸入動作。");
     }
 });
 

@@ -37,11 +37,16 @@ npm install
 node index.js
 ```
 
-（可選）使用 `nodemon` 開發時自動重啟：
+（開發建議）使用 `nodemon` 自動重啟：本專案已將 `nodemon` 安裝為 `devDependency`，建議使用 `npm run dev` 以確保團隊與 CI 的一致性。
 
 ```bash
-npm install -g nodemon
-nodemon index.js
+npm run dev
+```
+
+或直接使用 `npx`（會優先使用本地安裝的版本）：
+
+```bash
+npx nodemon index.js
 ```
 
 **Discord 注意事項**
@@ -53,6 +58,15 @@ nodemon index.js
 
 - 若程式啟動後無回應，檢查 `.env` 內容是否正確並確認 bot token 有效。
 - 檢查終端 / 日誌輸出以取得錯誤資訊。
+
+**模型輪替與故障轉移**
+
+- **說明**: 機器人會在多個 Gemini / Generative 模型之間輪替（failover），以減少單一模型達到速率或配額限制時造成的完全中斷。
+- **目前使用的模型池**: `models/gemini-1.5-pro`, `models/gemini-2.5-flash`, `models/gemini-1.5-flash`, `models/gemini-1.5-flash-8k`, `models/gemini-2.5-pro`。
+- **行為**: 當呼叫模型時遇到 HTTP `429`（Too Many Requests）或 `503`（Service Unavailable）等錯誤，程式會自動切換到下一個備援模型並重試，直到池中模型都試過一輪為止。如果所有模型皆失敗，機器人會回覆使用者提示請稍後再試。
+- **日誌**: `index.js` 會在嘗試呼叫模型時輸出類似 `【嘗試呼叫】 模型: <modelName> (嘗試次數: N)` 的日誌，方便追蹤哪個模型被使用以及是否發生切換（請查看主控端的終端輸出）。
+- **如何調整**: 若要新增或移除模型、或改變嘗試邏輯，可編輯 `MODELS_POOL` 陣列（參見 `index.js`）：[index.js](index.js#L1)
+- **建議**: 若你發現常出現 429，請到 Google Generative API 控制台查看使用量與限額，並考慮申請更高配額或調整請求頻率（例如加上重試退避策略、降低 `temperature` 或減少 `maxOutputTokens`）。
 
 ---
 
