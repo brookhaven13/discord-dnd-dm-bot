@@ -1,6 +1,15 @@
 const { Client, GatewayIntentBits } = require("discord.js");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { systemInstruction, MODELS_POOL } = require("./bot-config");
+// const { GoogleGenerativeAI } = require("@google/generative-ai"); // 若使用 Gemini AI 請解註解
+const { systemInstruction, GEMINI_MODELS, OPENROUTER_MODELS } = require("./bot-config");
+
+// Choose model pool based on MODEL_PROVIDER env var (default: openrouter)
+const _provider = (process.env.MODEL_PROVIDER || "openrouter").toLowerCase();
+let MODELS_POOL = _provider === "gemini" ? GEMINI_MODELS : OPENROUTER_MODELS;
+if (!MODELS_POOL || MODELS_POOL.length === 0) {
+  // fallback: prefer OPENROUTER then GEMINI
+  MODELS_POOL = OPENROUTER_MODELS.length ? OPENROUTER_MODELS : GEMINI_MODELS;
+}
+console.log(`[config] model provider=${_provider} models=${MODELS_POOL.join(', ')}`);
 
 const client = new Client({
   intents: [
@@ -11,7 +20,8 @@ const client = new Client({
 });
 
 // Generative AI 初始化，使用環境變數中的 API Key
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY); // 若使用 Gemini AI 請解註解
+// 若使用 Gemini SDK，可在 .env 設定 GEMINI_API_KEY 並切換 MODEL_PROVIDER
+const { callModel } = require("./services/dispatcher");
 
 // 全局模型指標，記錄目前用到哪一個，不用每次都從第一個開始試
 let currentModelIndex = 0;
@@ -86,27 +96,30 @@ client.on("messageCreate", async (message) => {
           `[嘗試呼叫] 模型: ${modelName} (嘗試次數: ${attempts + 1})`,
         );
 
-        const currentModel = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction: systemInstruction,
-        });
-
-        // 餵給 API 的是包含新訊息的臨時陣列
-        const result = await currentModel.generateContent({
-          contents: tempContents,
-        });
-        // 支援不同回傳型態的取值（某些 SDK 會包成 function 或屬性）
-        if (typeof result?.response?.text === "function") {
-          responseText = result.response.text();
-        } else if (typeof result?.response === "string") {
-          responseText = result.response;
-        } else if (typeof result?.response?.text === "string") {
-          responseText = result.response.text;
-        } else if (typeof result === "string") {
-          responseText = result;
-        } else {
-          responseText = JSON.stringify(result?.response || result || "");
+        // If MODELS_POOL entry looks like a prompt (contains space), fallback to env OPENROUTER_MODEL
+        let modelToUse = modelName;
+        if (!modelToUse || modelToUse.includes(" ")) {
+          modelToUse = process.env.OPENROUTER_MODEL;
+          console.warn(
+            `MODELS_POOL entry looks like a prompt; falling back to OPENROUTER_MODEL=${modelToUse}`,
+          );
         }
+        if (!modelToUse)
+          throw new Error(
+            "No valid model available (set OPENROUTER_MODEL or update MODELS_POOL)",
+          );
+
+        // Build messages array for OpenRouter
+        const messages = [
+          { role: "system", content: systemInstruction },
+          ...tempContents.map((c) => ({
+            role: c.role === "model" ? "assistant" : c.role,
+            content: (c.parts || []).map((p) => p.text).join(" "),
+          })),
+        ];
+
+        // Call configured model provider (OpenRouter or Gemini)
+        responseText = await callModel(modelToUse, messages);
 
         // 成功：把全域索引更新為本次成功的模型，供下一次起始使用
         currentModelIndex = modelIndexToTry;
