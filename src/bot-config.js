@@ -61,9 +61,9 @@ const GEMINI_MODELS = [
 
 const OPENROUTER_MODELS = [
   // Examples of OpenRouter-compatible ids (replace with ids available to you)
-  "moonshotai/kimi-k2.5",
-  "moonshotai/kimi-k2.6",
+  "meta-llama/llama-3.3-70b-instruct:free",
   "qwen/qwen3-next-80b-a3b-instruct:free",
+  "moonshotai/kimi-k2.5",
 ];
 
 // Backwards-compatible default export (will be selected by app based on MODEL_PROVIDER)
