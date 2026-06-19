@@ -63,6 +63,8 @@ const OPENROUTER_MODELS = [
   // Examples of OpenRouter-compatible ids (replace with ids available to you)
   "meta-llama/llama-3.3-70b-instruct:free",
   "qwen/qwen3-next-80b-a3b-instruct:free",
+  "google/gemini-3.1-flash-lite:free",
+  "google/gemini-3.1-flash-lite",
   "moonshotai/kimi-k2.5",
 ];
 
