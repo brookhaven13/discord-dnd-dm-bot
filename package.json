@@ -1,7 +1,8 @@
 {
   "name": "dnd-dm",
   "version": "1.1.2",
-  "description": "",
+  "type": "commonjs",
+  "description": "A Dungeons & Dragons Discord DM Bot",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -18,7 +19,8 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "discord.js": "^14.26.4",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "openai": "^6.44.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

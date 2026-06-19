@@ -93,7 +93,3 @@ npx nodemon index.js
 - **日誌**: `src/app.js` 會在嘗試呼叫模型時輸出類似 `【嘗試呼叫】 模型: <modelName> (嘗試次數: N)` 的日誌，方便追蹤哪個模型被使用以及是否發生切換（請查看主控端的終端輸出）。
 - **如何調整**: 若要新增或移除模型、或改變嘗試邏輯，可編輯 `MODELS_POOL` 陣列（參見 `src/bot-config.js`）：[src/bot-config.js](src/bot-config.js#L1)
 - **建議**: 若你發現常出現 429，請到你使用的模型提供者控制台查看使用量與限額（Google Generative API 控制台或 OpenRouter 儀表板），並考慮申請更高配額或調整請求頻率（例如加上重試退避策略、降低 `temperature` 或減少 `maxOutputTokens`）。
-
----
-
-檔案： [index.js](index.js#L1)
