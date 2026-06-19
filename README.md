@@ -14,11 +14,11 @@
 2. 在 `.env` 中放入下面兩個環境變數（將右側的文字換成你自己的金鑰或 token）：
 
 ```
-GEMINI_API_KEY=your_gemini_api_key_here
+AI_API_KEY=your_ai_api_key_here
 DISCORD_BOT_TOKEN=your_discord_bot_token_here
 ```
 
-- `GEMINI_API_KEY`：你在 Google Generative AI / Gemini 管理後台取得的 API key。
+- `AI_API_KEY`：你在 Google Generative AI / Gemini 管理後台取得的 API key。
 - `DISCORD_BOT_TOKEN`：你在 Discord Developer Portal 取得的 bot token（切勿在公開 repo 中洩露）。
 
 注意：本專案已將 `.env` 加入到 `.gitignore`，請勿將包含敏感金鑰的檔案提交到版本控制系統。
