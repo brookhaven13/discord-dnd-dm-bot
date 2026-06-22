@@ -95,7 +95,26 @@ client.on("messageCreate", async (message) => {
     if (!newSheets) {
       await safeReply(
         message,
-        "⚠️ 請在指令後方加上具體 Role Card 內容。例如：\`@城主 設定角色卡 [光明] 戰士...\` ",
+        `⚠️ 請在指令後方加上具體 Role Card 內容。請將整份角色卡貼在指令後（範例，可直接複製貼上）：
+          \n\n\`\`\`\n@城主 設定角色卡
+          - 玩家 Discord 暱稱: 請填入你的 Discord 顯示名稱
+          - 角色名字:
+          - 種族 / 職業:
+          - 角色等級: Level 1
+          - 陣營 (Alignment): 例如：中立善良 / 混亂中立
+          - 最大血量 (Max HP):
+          - 當前血量 (Current HP):
+          - 護甲等級 (Armor Class, AC):
+          - 力量 (STR): [數值]（調整值: +X）
+          - 敏捷 (DEX): [數值]（調整值: +X）
+          - 體質 (CON): [數值]（調整值: +X）
+          - 智力 (INT): [數值]（調整值: +X）
+          - 感知 (WIS): [數值]（調整值: +X）
+          - 魅力 (CHA): [數值]（調整值: +X）
+          - 擅長技能 (Proficiencies): 例如：運動、奧術、隱匿
+          - 種族 / 職業核心能力: 例如：黑暗視覺、狂暴
+          \`\`\`
+          `,
       );
       return;
     }
