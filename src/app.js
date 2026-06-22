@@ -1,6 +1,9 @@
 const { Client, GatewayIntentBits } = require("discord.js");
-// const { GoogleGenerativeAI } = require("@google/generative-ai"); // 若使用 Gemini AI 請解註解
-const { systemInstruction, GEMINI_MODELS, OPENROUTER_MODELS } = require("./bot-config");
+const {
+  systemInstruction,
+  GEMINI_MODELS,
+  OPENROUTER_MODELS,
+} = require("./bot-config");
 
 // Choose model pool based on MODEL_PROVIDER env var (default: openrouter)
 const _provider = (process.env.MODEL_PROVIDER || "openrouter").toLowerCase();
@@ -9,7 +12,9 @@ if (!MODELS_POOL || MODELS_POOL.length === 0) {
   // fallback: prefer OPENROUTER then GEMINI
   MODELS_POOL = OPENROUTER_MODELS.length ? OPENROUTER_MODELS : GEMINI_MODELS;
 }
-console.log(`[config] model provider=${_provider} models=${MODELS_POOL.join(', ')}`);
+console.log(
+  `[config] model provider=${_provider} models=${MODELS_POOL.join(", ")}`,
+);
 
 const client = new Client({
   intents: [
@@ -19,8 +24,7 @@ const client = new Client({
   ],
 });
 
-// Generative AI 初始化，使用環境變數中的 API Key
-// 若使用 Gemini SDK，可在 .env 設定 GEMINI_API_KEY 並切換 MODEL_PROVIDER
+// AI 初始化，使用環境變數中的 API Key
 const { callModel } = require("./services/dispatcher");
 
 // 全局模型指標，記錄目前用到哪一個，不用每次都從第一個開始試
@@ -64,10 +68,12 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot || !message.mentions.has(client.user)) return;
 
   const channelId = message.channel.id;
-  
+
   // 【動態防搞混】：取得發話玩家在該伺服器內的當前暱稱
-  const playerNickname = message.member ? message.member.displayName : message.author.username;
-  
+  const playerNickname = message.member
+    ? message.member.displayName
+    : message.author.username;
+
   const userMessage = message.content
     .replace(`<@${client.user.id}>`, "")
     .trim();
@@ -76,7 +82,7 @@ client.on("messageCreate", async (message) => {
   if (!activeRooms.has(channelId)) {
     activeRooms.set(channelId, {
       history: [],
-      sheets: `*(目前此房間尚未設定動態角色卡，城主將依據預設劇本帶團)*`
+      sheets: `*(目前此房間尚未設定動態角色卡，城主將依據預設劇本帶團)*`,
     });
   }
 
@@ -86,13 +92,19 @@ client.on("messageCreate", async (message) => {
   if (userMessage.startsWith("設定角色卡")) {
     const newSheets = userMessage.replace("設定角色卡", "").trim();
     if (!newSheets) {
-      await safeReply(message, "⚠️ 請在指令後方加上具體 Role Card 內容。例如：\`@城主 設定角色卡 [光明] 戰士...\` ");
+      await safeReply(
+        message,
+        "⚠️ 請在指令後方加上具體 Role Card 內容。例如：\`@城主 設定角色卡 [光明] 戰士...\` ",
+      );
       return;
     }
     room.sheets = newSheets;
     activeRooms.set(channelId, room);
-    
-    await safeReply(message, `✅ **【系統通知】**：本房間的新角色卡已成功載入！新劇本開跑時城主將自動採用此設定，無需重啟 Bot。`);
+
+    await safeReply(
+      message,
+      `✅ **【系統通知】**：本房間的新角色卡已成功載入！新劇本開跑時城主將自動採用此設定，無需重啟 Bot。`,
+    );
     return;
   }
 
@@ -161,7 +173,9 @@ client.on("messageCreate", async (message) => {
 
         // Call configured model provider (OpenRouter or Gemini)
         // 這裡限制 max_tokens: 450 做物理斷句，強迫 AI 遇到要求骰子時停下
-        responseText = await callModel(modelToUse, messages, { max_tokens: 450 });
+        responseText = await callModel(modelToUse, messages, {
+          max_tokens: 450,
+        });
 
         // 成功：把全域索引更新為本次成功的模型，供下一次起始使用
         currentModelIndex = modelIndexToTry;
@@ -212,7 +226,10 @@ client.on("messageCreate", async (message) => {
     }
 
     // 【關鍵修正】：只有完全成功拿到回應後，才正式把帶有暱稱標籤的對話寫入真正的記憶 Map
-    room.history.push({ role: "user", parts: [{ text: formattedUserMessage }] });
+    room.history.push({
+      role: "user",
+      parts: [{ text: formattedUserMessage }],
+    });
     room.history.push({ role: "model", parts: [{ text: responseText }] });
 
     // 限縮記憶長度

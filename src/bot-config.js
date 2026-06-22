@@ -50,12 +50,12 @@ const systemInstruction = `
 // 模型池：分別為 Gemini（SDK）與 OpenRouter（HTTP）兩組設定
 // 請根據你帳號的權限與可用型號調整，或在 .env 設定 OPENROUTER_MODEL 作為預設
 
-// 付費模式下的黃金高 CP 值模型池
-const MODELS_POOL = [
-    "gemini-3.1-flash-lite",   // 1. 絕對主力：高智商、極度便宜、支援超強快取
-    "gemini-2.5-flash-lite",   // 2. 備援防線：舊版輕量版（若 3.1 塞車時頂上）
-    "gemini-3.5-flash",        // 3. 劇情大推手：遇到複雜戰鬥或需要高文字張力時備用
-    "gemini-2.5-pro"           // 4. 傳奇終結者：智商最高，留著當最後的死線
+// 付費模式下的黃金高 CP 值模型池（Gemini SDK 型號）
+const GEMINI_MODELS = [
+  "gemini-3.1-flash-lite", // 1. 絕對主力：高智商、極度便宜、支援超強快取
+  "gemini-2.5-flash-lite", // 2. 備援防線：舊版輕量版（若 3.1 塞車時頂上）
+  "gemini-3.5-flash", // 3. 劇情大推手：遇到複雜戰鬥或需要高文字張力時備用
+  "gemini-2.5-pro", // 4. 傳奇終結者：智商最高，留著當最後的死線
 ];
 
 const OPENROUTER_MODELS = [
