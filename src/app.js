@@ -57,7 +57,8 @@ async function safeReply(message, content) {
   }
 }
 
-client.once("ready", () => {
+// The `ready` event has been renamed to `clientReady` in newer discord.js versions.
+client.once("clientReady", () => {
   console.log(
     `🏰 城主機器人 ${client.user.tag} 已上線！模型輪詢故障轉移機制已啟動。`,
   );
