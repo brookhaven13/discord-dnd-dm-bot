@@ -132,6 +132,7 @@ client.on("messageCreate", async (message) => {
   const formattedUserMessage = `[Discord 玩家: ${playerNickname}] 宣告行動: ${userMessage}`;
 
   try {
+    // 讓機器人在頻道顯示「正在輸入」的狀態，增加互動感
     await message.channel.sendTyping();
 
     let responseText = null;
