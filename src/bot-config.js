@@ -60,7 +60,7 @@ const GEMINI_MODELS = [
 
 const OPENROUTER_MODELS = [
   // Examples of OpenRouter-compatible ids (replace with ids available to you)
-  "mistralai/ministral-8b-2512",
+  "qwen/qwen3.6-plus",
   "google/gemini-3.1-flash-lite",
   "meta-llama/llama-3.1-8b-instruct",
   "deepseek/deepseek-v4-flash",
