@@ -26,7 +26,8 @@ const { callModel } = require("./services/dispatcher");
 // 全局模型指標，記錄目前用到哪一個，不用每次都從第一個開始試
 let currentModelIndex = 0;
 
-const channelHistories = new Map();
+// 【架構升級】：此 Map 將儲存各房間的歷史紀錄與專屬的「動態角色卡」
+const activeRooms = new Map();
 const MAX_HISTORY = 14;
 
 // 回覆守護：避免對同一則訊息在同一個 process 中回覆多次
@@ -63,15 +64,40 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot || !message.mentions.has(client.user)) return;
 
   const channelId = message.channel.id;
+  
+  // 【動態防搞混】：取得發話玩家在該伺服器內的當前暱稱
+  const playerNickname = message.member ? message.member.displayName : message.author.username;
+  
   const userMessage = message.content
     .replace(`<@${client.user.id}>`, "")
     .trim();
 
-  if (!channelHistories.has(channelId)) {
-    channelHistories.set(channelId, []);
+  // 【房間初始化】：如果該頻道尚未建立資料，初始化歷史紀錄與空白角色卡
+  if (!activeRooms.has(channelId)) {
+    activeRooms.set(channelId, {
+      history: [],
+      sheets: `*(目前此房間尚未設定動態角色卡，城主將依據預設劇本帶團)*`
+    });
   }
 
-  let history = channelHistories.get(channelId);
+  let room = activeRooms.get(channelId);
+
+  // 🔥【動態角色卡設定指令】：攔截關鍵字，直接更新該房間設定而不推進劇情
+  if (userMessage.startsWith("設定角色卡")) {
+    const newSheets = userMessage.replace("設定角色卡", "").trim();
+    if (!newSheets) {
+      await safeReply(message, "⚠️ 請在指令後方加上具體 Role Card 內容。例如：\`@城主 設定角色卡 [小明] 戰士...\` ");
+      return;
+    }
+    room.sheets = newSheets;
+    activeRooms.set(channelId, room);
+    
+    await safeReply(message, `✅ **【系統通知】**：本房間的新角色卡已成功載入！新劇本開跑時城主將自動採用此設定，無需重啟 Bot。`);
+    return;
+  }
+
+  // 【結構化標籤】：手動強迫 AI 知道這句話是誰講的，解決混淆或玩家變 NPC 的問題
+  const formattedUserMessage = `[Discord 玩家: ${playerNickname}] 宣告行動: ${userMessage}`;
 
   try {
     await message.channel.sendTyping();
@@ -80,10 +106,10 @@ client.on("messageCreate", async (message) => {
     let attempts = 0;
 
     // 拷貝一份當前的歷史紀錄，用來丟給 API 測試
-    // 並且把這一次的新訊息暫時塞進去這個臨時陣列裡
+    // 並且把這一次帶有發話者標籤的新訊息暫時塞進去這個臨時陣列裡
     const tempContents = [
-      ...history,
-      { role: "user", parts: [{ text: userMessage }] },
+      ...room.history,
+      { role: "user", parts: [{ text: formattedUserMessage }] },
     ];
 
     // 使用本次請求的本地索引來嘗試不同模型，避免在失敗時改變全域指標直到成功
@@ -109,9 +135,24 @@ client.on("messageCreate", async (message) => {
             "No valid model available (set OPENROUTER_MODEL or update MODELS_POOL)",
           );
 
+        // 【新舊融合】：將 bot-config 的系統規則、本房間當前動態角色卡與強烈約束動態組裝成 System Prompt
+        const dynamicSystemInstruction = `
+${systemInstruction}
+
+# 【本房間當前玩家角色卡（動態載入）】
+${room.sheets}
+
+---
+
+# 【硬核運算與防搶戲約束】
+* **精確辨識玩家**：本聊天室包含多位真實玩家。請根據訊息前綴的 \`[Discord 玩家: XXX]\` 標籤精確區分角色身份與行動。嚴禁將任何玩家角色變更為 NPC。
+* **嚴禁自行代骰（搶戲）**：當玩家宣告行動時，你**只能描述到行動前的準備或環境的即時變化**。你必須明確下達指令要求該玩家進行特定骰點檢定（例如：「請進行力量檢定」），並**在此處立即中斷你的回覆**，絕對不可自行虛構骰點結果或自行推進後續劇情。
+* **精確數值計算**：所有的數值變更（如受到攻擊扣除血量）必須嚴格基於【本房間當前玩家角色卡】的當前數值進行加減法運算。在玩家沒有主動回報新數值或骰點結果前，**嚴禁自行捏造、虛構或繼承錯誤的血量上限與基礎數值**。
+`;
+
         // Build messages array for OpenRouter
         const messages = [
-          { role: "system", content: systemInstruction },
+          { role: "system", content: dynamicSystemInstruction },
           ...tempContents.map((c) => ({
             role: c.role === "model" ? "assistant" : c.role,
             content: (c.parts || []).map((p) => p.text).join(" "),
@@ -119,7 +160,8 @@ client.on("messageCreate", async (message) => {
         ];
 
         // Call configured model provider (OpenRouter or Gemini)
-        responseText = await callModel(modelToUse, messages);
+        // 這裡限制 max_tokens: 450 做物理斷句，強迫 AI 遇到要求骰子時停下
+        responseText = await callModel(modelToUse, messages, { max_tokens: 450 });
 
         // 成功：把全域索引更新為本次成功的模型，供下一次起始使用
         currentModelIndex = modelIndexToTry;
@@ -169,16 +211,16 @@ client.on("messageCreate", async (message) => {
       return;
     }
 
-    // 【關鍵修正】：只有完全成功拿到回應後，才正式把對話寫入真正的記憶 Map
-    history.push({ role: "user", parts: [{ text: userMessage }] });
-    history.push({ role: "model", parts: [{ text: responseText }] });
+    // 【關鍵修正】：只有完全成功拿到回應後，才正式把帶有暱稱標籤的對話寫入真正的記憶 Map
+    room.history.push({ role: "user", parts: [{ text: formattedUserMessage }] });
+    room.history.push({ role: "model", parts: [{ text: responseText }] });
 
     // 限縮記憶長度
-    if (history.length > MAX_HISTORY) {
-      history.splice(0, 2);
+    if (room.history.length > MAX_HISTORY) {
+      room.history.splice(0, 2);
     }
 
-    channelHistories.set(channelId, history);
+    activeRooms.set(channelId, room);
 
     // 最後只發送一次回覆（改用 safeReply 以避免重複）
     console.log(
