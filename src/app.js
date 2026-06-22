@@ -86,7 +86,7 @@ client.on("messageCreate", async (message) => {
   if (userMessage.startsWith("設定角色卡")) {
     const newSheets = userMessage.replace("設定角色卡", "").trim();
     if (!newSheets) {
-      await safeReply(message, "⚠️ 請在指令後方加上具體 Role Card 內容。例如：\`@城主 設定角色卡 [小明] 戰士...\` ");
+      await safeReply(message, "⚠️ 請在指令後方加上具體 Role Card 內容。例如：\`@城主 設定角色卡 [光明] 戰士...\` ");
       return;
     }
     room.sheets = newSheets;
